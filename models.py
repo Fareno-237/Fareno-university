@@ -12,7 +12,6 @@ class Utilisateur(db.Model):
     mot_de_passe = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), nullable=False, default='enseignant', server_default='enseignant')
     derniere_connexion = db.Column(db.DateTime)
-    __table_args__ = ()  # Pas de contraintes CHECK ici
 
 # Modèle Enseignant
 class Enseignant(db.Model):
@@ -24,7 +23,6 @@ class Enseignant(db.Model):
     disponibilites = db.Column(db.JSON, nullable=True)
     preferences = db.Column(db.JSON, nullable=True)
     matieres = db.relationship('Matiere', secondary='enseignant_matiere', backref=db.backref('enseignants', lazy='dynamic'))
-    __table_args__ = ()  # Pas de contraintes CHECK ici
 
 # Modèle Salle
 class Salle(db.Model):
@@ -59,16 +57,16 @@ class Matiere(db.Model):
     )
 
 # Table d'association Enseignant-Matiere
-class EnseignantMatiere(db.Model):
-    __tablename__ = 'enseignant_matiere'
-    id_enseignant = db.Column(db.Integer, db.ForeignKey('enseignants.id_enseignant'), primary_key=True)
-    id_matiere = db.Column(db.Integer, db.ForeignKey('matieres.id_matiere'), primary_key=True)
+enseignant_matiere = db.Table('enseignant_matiere',
+    db.Column('id_enseignant', db.Integer, db.ForeignKey('enseignants.id_enseignant'), primary_key=True),
+    db.Column('id_matiere', db.Integer, db.ForeignKey('matieres.id_matiere'), primary_key=True)
+)
 
 # Table d'association Groupe-Matiere
-class GroupeMatiere(db.Model):
-    __tablename__ = 'groupe_matiere'
-    id_groupe = db.Column(db.Integer, db.ForeignKey('groupes.id_groupe'), primary_key=True)
-    id_matiere = db.Column(db.Integer, db.ForeignKey('matieres.id_matiere'), primary_key=True)
+groupe_matiere = db.Table('groupe_matiere',
+    db.Column('id_groupe', db.Integer, db.ForeignKey('groupes.id_groupe'), primary_key=True),
+    db.Column('id_matiere', db.Integer, db.ForeignKey('matieres.id_matiere'), primary_key=True)
+)
 
 # Modèle Contrainte
 class Contrainte(db.Model):
@@ -76,7 +74,7 @@ class Contrainte(db.Model):
     id_contrainte = db.Column(db.Integer, primary_key=True)
     type_contrainte = db.Column(db.String(50), nullable=False)
     valeur = db.Column(db.Text, nullable=False)
-    entite_concernee = db.Column(db.String(20), nullable=False)  # Supprimez 'check' ici
+    entite_concernee = db.Column(db.String(20), nullable=False)
     id_entite = db.Column(db.Integer, nullable=False)
     __table_args__ = (
         db.CheckConstraint("entite_concernee IN ('enseignant', 'groupe', 'salle')", name='check_entite_concernee'),
@@ -105,4 +103,3 @@ class Log(db.Model):
     timestamp = db.Column(db.DateTime, server_default=db.func.now())
     details = db.Column(db.Text)
     conflit_resolu = db.Column(db.Boolean, default=False)
-    __table_args__ = ()  # Pas de contraintes CHECK ici
