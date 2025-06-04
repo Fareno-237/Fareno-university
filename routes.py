@@ -1,4 +1,4 @@
-from app import app  # Importer l'instance app depuis app.py
+from app import app
 from flask import request, jsonify, send_file
 from models import db, Utilisateur, Enseignant, Salle, Groupe, Matiere, Contrainte, EmploiDuTemps, Log
 import jwt
@@ -13,7 +13,12 @@ from icalendar import Calendar, Event
 # Route pour l'URL racine
 @app.route('/')
 def index():
-    return jsonify({'message': 'Bienvenue sur l\'API de FARENO UNIVERSITY ! Accédez aux routes comme /api/login pour commencer.'})
+    return send_file('index.html')
+
+# Route pour la page de connexion
+@app.route('/login')
+def login_page():
+    return send_file('login.html')
 
 # Middleware pour vérifier le token JWT
 def token_required(f):
@@ -24,13 +29,13 @@ def token_required(f):
             return jsonify({'message': 'Token manquant'}), 401
         try:
             data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
-            current_user = Utilisateur.query.get(data['user_id'])
+            current_user = Utilisateur.query.get(data['id_utilisateur'])  # Ajusté pour id_utilisateur
         except:
             return jsonify({'message': 'Token invalide'}), 401
         return f(current_user, *args, **kwargs)
     return decorated
 
-# Login
+# Login API
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -45,7 +50,7 @@ def login():
     db.session.commit()
     
     token = jwt.encode({
-        'user_id': user.id_utilisateur,
+        'id_utilisateur': user.id_utilisateur,  # Ajusté pour id_utilisateur
         'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
     }, app.config['SECRET_KEY'])
     
@@ -57,7 +62,7 @@ def login():
 def get_utilisateurs(current_user):
     utilisateurs = Utilisateur.query.all()
     return jsonify([{
-        'nom': u.nom + ' ' + u.prenom,
+        'nom': f"{u.nom} {u.prenom}",
         'email': u.email,
         'role': u.role
     } for u in utilisateurs])
@@ -71,7 +76,7 @@ def add_utilisateur(current_user):
         prenom=data['prenom'],
         email=data['email'],
         mot_de_passe=data['mot_de_passe'],
-        role=data['role']
+        role=data.get('role', 'enseignant')
     )
     db.session.add(nouvel_utilisateur)
     db.session.commit()
@@ -88,7 +93,8 @@ def add_utilisateur(current_user):
 def get_enseignants(current_user):
     enseignants = Enseignant.query.all()
     return jsonify([{
-        'nom': e.nom + ' ' + e.prenom,
+        'nom': f"{e.nom} {e.prenom}",
+        'email': e.email,
         'matieres': [matiere.nom for matiere in e.matieres],
         'disponibilites': e.disponibilites
     } for e in enseignants])
@@ -101,7 +107,7 @@ def add_enseignant(current_user):
         nom=data['nom'],
         prenom=data['prenom'],
         email=data['email'],
-        disponibilites=data['disponibilites']
+        disponibilites=data.get('disponibilites')
     )
     db.session.add(nouvel_enseignant)
     db.session.commit()
@@ -146,8 +152,8 @@ def add_contrainte(current_user):
 @app.route('/api/emplois', methods=['GET'])
 @token_required
 def get_emplois(current_user):
-    groupe_id = request.args.get('groupe_id')
-    enseignant_id = request.args.get('enseignant_id')
+    groupe_id = request.args.get('id_groupe')  # Ajusté pour id_groupe
+    enseignant_id = request.args.get('id_enseignant')  # Ajusté pour id_enseignant
     date = request.args.get('date')
     
     query = EmploiDuTemps.query
@@ -170,7 +176,7 @@ def get_emplois(current_user):
 @app.route('/api/export/pdf', methods=['GET'])
 @token_required
 def export_pdf(current_user):
-    groupe_id = request.args.get('groupe_id')
+    groupe_id = request.args.get('id_groupe')  # Ajusté pour id_groupe
     emplois = EmploiDuTemps.query.filter_by(id_groupe=groupe_id).all()
     
     buffer = BytesIO()
