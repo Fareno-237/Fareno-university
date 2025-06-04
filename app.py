@@ -16,7 +16,3 @@ db = SQLAlchemy(app)
 # Importer routes et modèles après la création de l'app et db
 import routes
 import models
-
-# Créer les tables dans la BDD (à faire une fois)
-with app.app_context():
-    db.create_all()
