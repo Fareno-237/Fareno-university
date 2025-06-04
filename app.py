@@ -3,7 +3,7 @@ from flask import Flask
 from config import Config
 from models import db
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='.', static_folder='.')
 
 # Charger la configuration à partir des variables d'environnement
 app.config.from_object(Config)
