@@ -1,21 +1,22 @@
-import os
 from flask import Flask
-from config import Config
-from models import db
+from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
+import os
 
-app = Flask(__name__, template_folder='.', static_folder='.')
+# Charger les variables d'environnement du .env
+load_dotenv()
 
-# Charger la configuration à partir des variables d'environnement
-app.config.from_object(Config)
-# Surcharger SQLALCHEMY_DATABASE_URI avec la variable d'environnement si elle existe
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', app.config['SQLALCHEMY_DATABASE_URI'])
+# Initialisation de l'app Flask
+app = Flask(__name__)
+app.config.from_object("config.Config")
 
-db.init_app(app)
+# Connexion à la base de données
+db = SQLAlchemy(app)
 
+# Importer routes et modèles après la création de l'app et db
+import routes
+import models
+
+# Créer les tables dans la BDD (à faire une fois)
 with app.app_context():
-    db.create_all()  # Crée les tables si elles n'existent pas
-
-from routes import *  # Importer les routes après avoir défini app
-
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
+    db.create_all()
