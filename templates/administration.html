@@ -1,0 +1,129 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" href="{% static 'statics/FARENOUNIVERSITY.jpg' %}" type="image/x-icon" />
+    <title>Administration - Fareno University</title>
+    <link rel="stylesheet" href="{% static 'css/administration.css' %}" />
+</head>
+<body>
+    <div class="container">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰ Menu</button>
+        <nav class="sidebar" id="sidebar">
+            <img src="{% static 'statics/FARENOUNIVERSITY.jpg' %}" alt="Fareno University Logo" />
+            <a href="{% url 'dashboard' %}">Tableau de Bord</a>
+            <a href="{% url 'gestion-utilisateurs' %}">Gestion des Utilisateurs</a>
+            <a href="{% url 'gestion-ressources' %}">Gestion des Ressources</a>
+            <a href="{% url 'saisie-contraintes' %}">Saisie des Contraintes</a>
+            <a href="{% url 'visualisation' %}">Visualisation</a>
+            <a href="{% url 'exportation' %}">Exportation</a>
+            <a href="{% url 'administration' %}">Administration</a>
+            <a href="{% url 'profil' %}">Profil</a>
+            <a href="{% url 'aide' %}">Aide</a>
+            <a href="{% url 'logout' %}" class="logout">Déconnexion</a>
+        </nav>
+        <main class="main-content">
+            <h1>Administration</h1>
+            <div class="tabs">
+                <div class="tab active" onclick="openTab('logs')">Logs</div>
+                <div class="tab" onclick="openTab('adjustments')">Ajustements Manuels</div>
+            </div>
+            <div id="logs" class="tab-content active">
+                <div class="actions">
+                    <div class="search-bar">
+                        <input type="text" placeholder="Rechercher dans les logs..." onkeyup="filterLogs()" />
+                    </div>
+                </div>
+                <div class="log-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Utilisateur</th>
+                                <th>Action</th>
+                                <th>Détails</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-table-body">
+                            {% for log in logs %}
+                            <tr>
+                                <td>{{ log.date|date:"Y-m-d H:i" }}</td>
+                                <td>{{ log.user.username }}</td>
+                                <td>{{ log.action }}</td>
+                                <td>{{ log.details }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4">Aucun log disponible.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="adjustments" class="tab-content">
+                <form method="POST" action="{% url 'administration-ajustement' %}" class="adjustment-form">
+                    {% csrf_token %}
+                    <table>
+                        <tr>
+                            <th><label for="user">Utilisateur</label></th>
+                            <td>
+                                <select name="user" id="user" required>
+                                    {% for user in users %}
+                                    <option value="{{ user.id }}">{{ user.username }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><label for="adjustment_type">Type d'ajustement</label></th>
+                            <td>
+                                <select name="adjustment_type" id="adjustment_type" required>
+                                    <option value="add">Ajouter</option>
+                                    <option value="modify">Modifier</option>
+                                    <option value="delete">Supprimer</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><label for="details">Détails</label></th>
+                            <td><textarea name="details" id="details" rows="4" required></textarea></td>
+                        </tr>
+                    </table>
+                    <button type="submit" class="apply-btn">Appliquer</button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        function openTab(tabName) {
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => tab.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            document.querySelector(`.tab[onclick="openTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function filterLogs() {
+            const input = document.querySelector('.search-bar input');
+            const filter = input.value.toLowerCase();
+            const rows = document.querySelectorAll('#log-table-body tr');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>
